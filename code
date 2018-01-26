@@ -1,0 +1,158 @@
+#	------------------------------------------------
+#	Jeu du pierre papier ciseaux contre l'ordinateur
+#	------------------------------------------------
+
+#1 : initialisation des variables et importation des modules random, time et pickle :
+#=============================================================================================================
+from random import randrange				# Pour le choix aleatoire
+from time import sleep					# Pause dans l'affichage
+import pickle                                           # Pour l'utilisation de fichiers (ecriture et lecture)
+
+action = ("Pierre", "Papier", "Ciseaux")	        # Choix de l'ordinateur (Pierre/Papier/Ciseaux)
+user = ""						# Choix de l'utilisateur
+score = 0						# Pour chaque manche
+pts_user = 0						# Points pour la partie entiere (Joueur)
+pts_ia = 0					        # Points pour la partie entiere (IA)
+
+probas = [1,1,1]                                        # Donnees de l'utilisateur (frequence d'utilisation de
+                                                        # chaque coup)
+
+print("Jeu du Pierre-Papier-Ciseaux")                   #affichage du debut du programme
+print("---------------------------- \n")
+#===============================================================================================================
+
+#2 Ouverture ou creation du fichier utilisateur ou sont stockees ses donnees :
+#===============================================================================================================
+
+utilisateur=str(input("Veuillez entrer un nom d'utilisateur : "))
+
+fich = open(utilisateur,"a")          #creation du fichier utilisateur si il n'existe pas, sinon ouverture simple
+fich.close()
+
+with open(utilisateur,"r") as fich:   #lecture du fichier
+    contenu=fich.read()
+
+if contenu=="":                       #si le fichier est vide, on met la liste probas vide dedans
+    with open(str(utilisateur),"wb") as fich:
+        mon_pickle=pickle.Pickler(fich)
+        mon_pickle.dump(probas)
+
+with open(str(utilisateur),"rb") as fich: # la nouvelle valeur de probas est celle du fichier :
+    mon_depickler=pickle.Unpickler(fich)  # [1,1,1] si le fichier est vide,
+    probas=mon_depickler.load()           # celle deja ecrite dans le fichier sinon
+
+#===============================================================================================================
+
+#3 Entree du choix de l'utilisateur :
+#===============================================================================================================
+while(pts_user < 3 and pts_ia < 3):		# Partie en 3 points gagnants
+    print("[Score : "+ str(pts_user) +" - "+ str(pts_ia) +"] Choisissez votre action :")
+    print("1) Pierre\n2) Papier\n3) Ciseaux", end="\n\n")
+
+    while(user == ""):                          #tant que l'utilisateur n'a pas fait un choix valable,
+        user = input("Votre choix : ")          #on le lui demande
+        if(user != "1" and user != "2" and user != "3"):
+        # Utilisateur recalcitrant
+            print("Veuillez entrer 1, 2 ou bien 3.", end="\n\n")
+            user = ""
+        else:
+            user = int(user)                    #et on stocke son choix dans la variable "user" (1,2, ou 3)
+    # fin while
+#===============================================================================================================
+
+#4 Choix de l'ordinateur :
+#===============================================================================================================
+    #conversion du nombre d'utilisaion de chaque coup en pourcentage par rapport a la somme de tous les coups :
+    somme=0
+    for i in range(3):
+        somme+=probas[i]
+
+    p=randrange(0,100)                          #on prend un nombre p au hasard entre 0 et 99
+    #selon le pourcentage de chaque coup, il y a plus ou moins de chances de jouer le coup qui le bat
+    if p<((probas[0]*100)/somme):
+        ia=2
+    elif p>=((probas[0]*100)/somme) and p<(((probas[1]*100)/somme)+((probas[0]*100)/somme)) :
+        ia=3
+    elif p>=(((probas[1]*100)/somme)+((probas[0]*100)/somme)) and p<(((probas[2]*100)/somme)+((probas[1]*100)/somme)+((probas[0]*100)/somme)) :
+        ia=1
+#===============================================================================================================
+
+#5 Comparaison des deux choix : (qui gagne la manche ?)
+#===============================================================================================================
+    # Comparaison des resultats
+
+    if(user == 1):
+        # si l'utilisateur a joue Pierre :
+        if(ia == 1):  #si IA a joue Pierre
+            # egalite
+            score = 0
+        elif(ia == 2):#si IA a joue Feuille
+            # perdu
+            score = -1
+        else:         #si IA a joue Ciseaux
+            # gagne
+            score = 1
+
+    elif(user == 2):
+        # si l'utilisateur a joue Papier :
+        if(ia == 1):
+            score = 1
+        elif(ia == 2):
+            score = 0
+        else:
+            score = -1
+
+    else:
+        # si l'utilisateur a joue Ciseaux:
+        if(ia == 1):
+            score = -1
+        elif(ia == 2):
+            score = 1
+        else:
+            score = 0
+
+    message = ""		# La variable servira a afficher la victoire ou la defaite
+    if(score < 0):
+        message += "Vous avez perdu ! "
+        pts_ia += 1
+
+    elif(score == 0):
+        message += "egalite ! "
+    else:
+        message += "Victoire ! "
+        pts_user += 1
+
+    message += "Vous(" + str(action[user-1]) + ") vs IA(" + str(action[ia-1]) + ")"
+    print("...")
+    sleep(1)
+    print(message, end="\n\n")
+    probas[user-1]=probas[user-1]+1 #on rajoute 1 a probas a l'indice de la liste correspondant au coup joue
+    user = ""			# reset le choix du joueur.
+#fin While
+#===============================================================================================================
+
+#6 Fin de la partie et sauvegarde des nouvelles donnees dans le fichier utilisateur :
+#===============================================================================================================
+if(pts_user > pts_ia): #si l'utilisateur a + de points que l'ordinateur :
+    print("Vous avez gagne la bataille ! Felicitations !")
+else:                  #si l'utilisateur a - de points que l'ordinateur :
+    print("Vous avez ete terrasse par un simple ordinateur. Honte a vous !")
+
+print("\nSCORES :\n------\nVous : " + str(pts_user) +".\nOrdinateur : " + str(pts_ia) + ".")
+
+#on ecrase les donnees de l'utilisateur :
+with open(str(utilisateur),"wb") as fich:
+    mon_pickle=pickle.Pickler(fich)
+    mon_pickle.dump(probas)
+#===============================================================================================================
+
+# Resume :
+#===============================================================================================================
+"""
+l'"IA" doit garder en memoire toutes les parties qu'elle a joue et etablir la frequence de chaque coup selon l'utilisateur
+pour jouer avec la meme frequence les coups inverse
+=> chaque fois que l'utilisateur fait un coup, on rajoute 1 au nombre de fois qu'il a fait ce coup dans la liste probas
+=> l'ia joue selon le pourcentage d'apparition de chaque coup chez l'adversaire
+=> a la fin de la partie, on ecrase les donnees du joueur
+"""
+#===============================================================================================================
